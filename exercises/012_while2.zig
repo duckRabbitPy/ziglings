@@ -25,7 +25,11 @@ pub fn main() void {
 
     // Please set the continue expression so that we get the desired
     // results in the print statement below.
-    while (n < 1000) : ??? {
+    while (n < 1000) : (if (n < 1000) {
+        n *= 2;
+    } else if (n == 1000) {
+        n += 24;
+    }) {
         // Print the current number
         std.debug.print("{} ", .{n});
     }
