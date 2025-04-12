@@ -5,12 +5,13 @@
 
 const std = @import("std");
 
-const MappedData = struct {
+const MappedSiteData = struct {
+    Id: ?[]const u8,
     Site: ?[]const u8,
     City: ?[]const u8,
     Region: ?[]const u8,
     Country: ?[]const u8,
-    CreatedAt: ?[]const u8,
+    Timezone: ?[]const u8,
 };
 
 const CustomError = error{
@@ -29,7 +30,7 @@ fn mapColumnsFromHeaders(
     rows: []const []const []const u8,
     allocator: std.mem.Allocator,
     headerMappings: []const HeaderMapping,
-) CustomError![]MappedData {
+) CustomError![]MappedSiteData {
     var headerPositions = std.StringHashMap(usize).init(allocator);
     defer headerPositions.deinit();
 
@@ -45,22 +46,26 @@ fn mapColumnsFromHeaders(
     }
 
     // Allocate memory for the array of mapped data (one per row)
-    var mappedRows = try allocator.alloc(MappedData, rows.len);
+    var mappedRows = try allocator.alloc(MappedSiteData, rows.len);
     errdefer allocator.free(mappedRows);
 
     for (rows, 0..) |row, i| {
-        var mappedData = MappedData{
+        var mappedData = MappedSiteData{
+            .Id = null,
             .Site = null,
             .City = null,
             .Region = null,
             .Country = null,
-            .CreatedAt = null,
+            .Timezone = null,
         };
 
         for (headerMappings) |hmap| {
             // Get the column position of this external header in the input data
             if (headerPositions.get(hmap.externalHeader)) |pos| {
-                if (std.mem.eql(u8, "Site", hmap.internalField)) {
+                if (std.mem.eql(u8, "Id", hmap.externalHeader)) {
+                    // map the column to the internal field
+                    mappedData.Id = row[pos];
+                } else if (std.mem.eql(u8, "Site", hmap.internalField)) {
                     // map the column to the internal field
                     mappedData.Site = row[pos];
                 } else if (std.mem.eql(u8, "City", hmap.internalField)) {
@@ -69,8 +74,8 @@ fn mapColumnsFromHeaders(
                     mappedData.Region = row[pos];
                 } else if (std.mem.eql(u8, "Country", hmap.internalField)) {
                     mappedData.Country = row[pos];
-                } else if (std.mem.eql(u8, "CreatedAt", hmap.internalField)) {
-                    mappedData.CreatedAt = row[pos];
+                } else if (std.mem.eql(u8, "Timezone", hmap.internalField)) {
+                    mappedData.Timezone = row[pos];
                 }
             }
         }
@@ -88,17 +93,32 @@ const UnMappedData = struct {
 
 fn getUnMappedData() UnMappedData {
     const row1 = &[_][]const u8{
-        "London", "United Kingdom", "Royal Oak", "2023-10-01T12:00:00Z", "Greater London",
+        "3c58afe2-0029-4f9a-8e78-2a8060c19305",
+        "London",
+        "United Kingdom",
+        "Royal Oak",
+        "Europe/London",
+        "Greater London",
     };
     const row2 = &[_][]const u8{
-        "New York", "United States", "Central Park", "2023-10-02T12:00:00Z", "New York",
+        "5b8f3c4e-0a2d-4f9a-8e78-2a8060c19305",
+        "New York",
+        "United States",
+        "Central Park",
+        "America/New_York",
+        "New York",
     };
     const row3 = &[_][]const u8{
-        "Paris", "France", "Eiffel Tower", "2023-10-03T12:00:00Z", "Île-de-France",
+        "ef23a0ff-db39-41b9-9a6b-0bb35d9d5e74",
+        "Paris",
+        "France",
+        "Eiffel Tower",
+        "Europe/Paris",
+        "Île-de-France",
     };
 
     return UnMappedData{
-        .Headers = &[_][]const u8{ "Town", "Nation", "Site Location", "Created", "Area" },
+        .Headers = &[_][]const u8{ "uuid", "Town", "Nation", "Site Location", "TZ", "Area" },
         .Rows = &[_][]const []const u8{ row1, row2, row3 },
     };
 }
@@ -112,11 +132,12 @@ const Integration = struct {
 
 fn getIntegration() Integration {
     const integrationHeaderMappings = [_]HeaderMapping{
+        .{ .externalHeader = "uuid", .internalField = "Id" },
         .{ .externalHeader = "Site Location", .internalField = "Site" },
         .{ .externalHeader = "Town", .internalField = "City" },
         .{ .externalHeader = "Area", .internalField = "Region" },
         .{ .externalHeader = "Nation", .internalField = "Country" },
-        .{ .externalHeader = "Created", .internalField = "CreatedAt" },
+        .{ .externalHeader = "TZ", .internalField = "Timezone" },
     };
     return Integration{
         .uuid = "123e4567-e89b-12d3-a456-426614174000",
@@ -151,6 +172,6 @@ pub fn main() CustomError!void {
         if (mapped.City) |city| std.debug.print("City: {s}\n", .{city});
         if (mapped.Region) |region| std.debug.print("Region: {s}\n", .{region});
         if (mapped.Country) |country| std.debug.print("Country: {s}\n", .{country});
-        if (mapped.CreatedAt) |createdAt| std.debug.print("CreatedAt: {s}\n", .{createdAt});
+        if (mapped.Timezone) |Timezone| std.debug.print("Timezone: {s}\n", .{Timezone});
     }
 }
