@@ -21,7 +21,8 @@ pub fn main() void {
     const data: [*]const u8 = "Weird Data!";
 
     // Please cast 'data' to 'printable':
-    const printable: [*:0]const u8 = ???;
+    // recasting and preserving the sentinel termination
+    const printable: [*:0]const u8 = @ptrCast(data);
 
     print("{s}\n", .{printable});
 }
