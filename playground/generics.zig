@@ -19,21 +19,21 @@ fn mergeAandB(a: AccountTypeA, b: AccountTypeB) AccountTypeA {
 }
 
 // generic function that accepts different account types
-fn mergeAccounts(comptime T: type, comptime U: type, a: T, b: U) BankingError!AccountTypeA {
+fn mergeAccounts(comptime Arg1: type, comptime Arg2: type, arg1: Arg1, arg2: Arg2) BankingError!AccountTypeA {
     // Check if the account types are compatible
-    if (U == AccountTypeA and T == AccountTypeA) {
+    if (Arg1 == AccountTypeA and Arg2 == AccountTypeA) {
         return BankingError.InvalidAccountType;
     }
-    if (U == AccountTypeB and T == AccountTypeB) {
+    if (Arg1 == AccountTypeB and Arg2 == AccountTypeB) {
         return BankingError.InvalidAccountType;
     }
 
-    if (T == AccountTypeA) {
-        return mergeAandB(a, b);
+    if (Arg1 == AccountTypeA) {
+        return mergeAandB(arg1, arg2);
     }
 
-    if (U == AccountTypeA) {
-        return mergeAandB(b, a);
+    if (Arg2 == AccountTypeA) {
+        return mergeAandB(arg2, arg1);
     }
 
     return BankingError.InvalidAccountCombination;
